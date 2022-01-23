@@ -1,7 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 
-import { login, register } from 'services/auth';
+import { login, register } from 'services/auth.js';
+import { getUserStats, getProfileImage } from 'services/getUser.js';
+import postCompany from 'services/postCompany.js';
+import postNewProfile from 'services/postNewProfile.js';
+import uploadUserImage from 'services/uploadUserImage.js';
 
 const AuthContext = createContext({
   currentUser: {},
@@ -17,22 +21,49 @@ export const AuthContextProvider = ({ children }) => {
   const [isUserLoggedIn, setUserLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  const loginUser = (userData) => {
-    setCurrentUser(userData.user);
-    localStorage.setItem('userJwt', userData.jwt);
-    setUserLoggedIn(true);
-    navigate('/pending-approval');
-  };
+  const loginUser = useCallback(
+    async (userData) => {
+      localStorage.setItem('userJwt', userData.jwt);
+      setUserLoggedIn(true);
+      navigate('/pending-approval');
+      const user = await getUserStats();
+      const userImage = await getProfileImage(user.id);
+      user['imagePathURL'] = userImage[0];
+      user['imageName'] = userImage[1];
+      setCurrentUser(user);
 
-  const handleRegister = async (data) => {
-    const userData = await register(data);
-    loginUser(userData);
-    return userData;
+      console.log({ userData }, { jwt: userData.jwt }, { user }, { userImage });
+    },
+    [navigate]
+  );
+
+  const handleRegister = async (data, userImg) => {
+    try {
+      const [userData, companyResponse, uploadResponse] = await Promise.all([
+        register(data.username, data.email, data.password),
+        postCompany(data.username),
+        uploadUserImage(userImg),
+      ]);
+
+      await postNewProfile(
+        data.username,
+        uploadResponse[0].id,
+        userData.user.id,
+        companyResponse.id
+      );
+      loginUser(userData);
+    } catch (err) {
+      console.error(`${err.message}, 💥🤯`);
+    }
   };
 
   const handleLogin = async (identifier, password) => {
-    const userData = await login(identifier, password);
-    loginUser(userData);
+    try {
+      const userData = await login(identifier, password);
+      loginUser(userData);
+    } catch (err) {
+      console.error(`${err.message}, 💥🤯`);
+    }
   };
 
   const handleLogout = () => {
@@ -46,10 +77,11 @@ export const AuthContextProvider = ({ children }) => {
     const loggedInUser = localStorage.getItem('userJwt');
     if (loggedInUser) {
       const foundUser = loggedInUser;
-      console.log('FOUND USER jwt!!!', foundUser);
-      setUserLoggedIn(true);
+      // setUserLoggedIn(true);
+      console.log('FOUND USER jwt!!!', { jwt: foundUser });
+      loginUser({ jwt: foundUser });
     }
-  }, []);
+  }, [loginUser]);
 
   const authContext = {
     currentUser,

@@ -4,13 +4,17 @@ import { API_URL } from 'config/config.js';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
+  timeout: 8000,
 });
 
-axiosInstance.interceptors.request.use(function (config) {
+axiosInstance.interceptors.request.use(function (req) {
   const jwt = localStorage.getItem('userJwt');
-  config.headers.Authorization = jwt ? `Bearer' ${jwt}` : '';
-  return config;
+  // config.headers.Authorization = jwt ? `Bearer' ${jwt}` : '';
+  if (jwt) {
+    console.log('dodaj jwt????????');
+    req.headers.Authorization = 'Bearer ' + jwt;
+  }
+  return req;
 });
 
 export default axiosInstance;

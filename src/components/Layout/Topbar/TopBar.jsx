@@ -6,7 +6,7 @@ import TopBarLink from './TopBarLink';
 import { useAuthContext } from 'context/AuthContext.jsx';
 
 function TopBar() {
-  const { isUserLoggedIn, handleLogout } = useAuthContext();
+  const { currentUser, isUserLoggedIn, handleLogout } = useAuthContext();
   const guestLinks = [
     {
       text: 'Login',
@@ -24,8 +24,14 @@ function TopBar() {
       onClick: () => handleLogout(),
     },
     {
-      text: 'My Profile',
+      text: currentUser?.username,
       href: '/my-profile',
+    },
+    {
+      text: 'profilePhoto',
+      href: '/my-profile',
+      imagePathURL: currentUser?.imagePathURL,
+      imageName: currentUser?.imageName,
     },
   ];
   const links = isUserLoggedIn ? userLinks : guestLinks;
@@ -49,12 +55,14 @@ function TopBar() {
       </HStack>
       <Spacer />
       <HStack>
-        <Flex alignItems="flex-end" flexDir={{ base: 'column', smmd: 'row' }}>
+        <Flex alignItems="center" flexDir={{ base: 'column', smmd: 'row' }}>
           {links.map((linkObj, index) => (
             <TopBarLink
               text={linkObj.text}
               href={linkObj.href}
               onClick={linkObj.onClick}
+              imagePathURL={linkObj.imagePathURL}
+              imageName={linkObj.imageName}
               key={index}
             />
           ))}

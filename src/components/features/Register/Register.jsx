@@ -1,42 +1,24 @@
-// import axios from 'axios';
-// import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
 import { useAuthContext } from 'context/AuthContext.jsx';
 import './Register.scss';
-import postUserData from 'services/postUserData';
 
 const Registration = () => {
   // eslint-disable-next-line no-unused-vars
-  const { handleRegister, currentUser } = useAuthContext();
-  // const [userData, setUserData] = useState({
-  //   name: '',
-  //   email: '',
-  //   password: '',
-  //   image: null,
-  // });
+  const { handleRegister } = useAuthContext();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    // eslint-disable-next-line no-unused-vars
-    reset,
     trigger,
   } = useForm();
 
   const handleSubmitRegistration = async (data) => {
-    const {
-      user: { id },
-    } = await handleRegister(data);
-
-    console.log(id, '👋');
-
     const userImg = new FormData();
-    userImg.append('userImg', data.image[0]);
-
-    await postUserData(userImg, data, id);
+    userImg.append('files', data.image[0]);
+    await handleRegister(data, userImg);
   };
 
   return (
@@ -54,7 +36,7 @@ const Registration = () => {
               id="name"
               className={`register__input ${errors.name && 'invalid'}`}
               placeholder="Name"
-              {...register('name', { required: 'Name is required' })}
+              {...register('username', { required: 'Name is required' })}
               onKeyUp={() => {
                 trigger('name');
               }}
@@ -95,7 +77,7 @@ const Registration = () => {
               id="password"
               placeholder="Password"
               {...register('password', {
-                required: 'Paswword is required',
+                required: 'Password is required',
                 minLength: {
                   value: 6,
                   message: 'Your password must be at least 6 characters long',
@@ -124,7 +106,7 @@ const Registration = () => {
             {errors.image && <p className="register__error-message">{errors.image.message}</p>}
           </div>
 
-          <div className="register__btn-conteiner">
+          <div className="register__btn-container">
             <Link to="/">
               <span className="register__paragraph"> Already have an account? </span>
             </Link>
